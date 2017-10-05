@@ -1,0 +1,17 @@
+Nexus Architecture:
+Expressive query language & secondary Indexes [Relational]
+Strong consistency [Relational]
+Enterprise Management and Integrations [Relational]
+Flexible Data Model [NOSQL] 
+Scalability and Performance [NOSQL]
+Always-On Global Deployments [NOSQL]
+
+Flexible Storage Architecture
+MongoDB uniquely allows users to mix and match multiple storage engines within a single deployment
+WiredTiger (Default)
+Encrypted (Requires MongoDB Enterprise Advanced)
+In-Memory (Requires MongoDB Enterprise Advanced)
+MMAPv1
+
+
+Unlike many NoSQL databases, users don’t need to give up JOINs entirely. For additional flexibility, MongoDB provides the ability to perform left-outer JOINs that combine data from multiple collections
