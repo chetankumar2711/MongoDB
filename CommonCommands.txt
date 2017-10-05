@@ -1,0 +1,277 @@
+192.168.1.4
+
+Date: 08/19/2017
+MongoDB
+It is a document based database. It supports data modeling based on common data access patterns.`MongoDB supports scaling out, as it diesn't have any joins. RDBMS have joins so they prefer scaling up. When I chose a database that doesn't exist, it is created in lazy fashion, i.e., database doesn't get created until first document is inserted in a collection in that database
+"_id" field is a must for every document, if you don't provide one, mongodb will insert one, "ObjectID" is a BSON type which willbe used here.
+
+MongoDB query language follows "query by example", e.g., pass a document, that defines a shape of documents that will be returned.
+Return value of "find" command is NOT an array of documents, but a cursor
+
+Namespaces - database.collection, i.e., test.mycollection define one namespace that represents mycollection collection in test database  
+
+0.) show databases / show dbs -  Displays all databases in server	
+1.) db.getName() or db- which databse I am in
+2.) show collections - lists all collections
+3.) db - shows the current db, is a global variable that holds current db
+4.) use abc - changes the current database to abc database, if abc doesn't exits, it is created a in a lazy fashion, i.e, when first document in entered in first collection
+
+scalar values: 1:1 values defined with their keys, i.e., height:6, quality:poor, no array or subdocument
+
+Writing CRUD operations:-
+1.) keys are always by default "String" type, so no need of "" while writing keys, 
+
+so db.movies.insert({title:"Jaws"}) is same as db.movies.insert({"title":"Jaws"})
+
+
+1.1) db.testCol.insert({height:6}), you can runt his 10 times anx you will have 10 different documents in collection with 10 different IDs
+1.2) _id - Allc ollections have a unique primary index on "_id" field, all other indexes that we create are secondary, All objectID are 12 byte hex strings. First 4 bytes: seconds since Unix epoch, next 3 bytes: MAC address, next 2 bytes: PID, next 3 bytes: counter, which ensures that all objectIDs are unique, since first three could be the same
+
+2.) find() is always used on collections and not on tables, e.g., If video database has movies collections, then use db.movies.find() will return documents in movies collection, there is no such thing as db.video.find(), if you wnat to see collections, just do "show collections"
+ 
+REMEMBER: keys and values are both case sensitive in documents:
+e.g., you can write db.collectionname.insert({topic:"Java"}, TOPIC:"java"), note that when you use find(filterCrietria), exact key and value should match case sensitively
+
+
+---------------------CRUD---------------------
+INSERT
+insertMany() by default is ordered insert, this means any errors in inserting a record will halt the insertion of subsequent records, use {ordered:false} clause in insert to continue inserting records while logging the failed ones
+Use insert() or (insertMany() and insertOne()) and pass either a single JSON object or an array of JSON objects.
+
+FIND(QUERY Document, Projection)
+
+Equality comparison: 
+
+Arrays: (Exact match for array, any element match, specific element match, matches using operators)
+1.) Exact match: db.movies.find({actors:["SRK", "Salman"]}) -> returns documents where "actors" field is an array and has only two elements, "SRK" and "Salman"
+2.) Any Match: same as an scalar value: db.movies.find({genre:"action"}) -> Returns documents where 
+a.) "genre" field is an array and has one element as "action"
+b.) "genre" field is a scalar field and has a value of "action"
+3.) Specific Match: meaning element at a specific positions
+db.movies.find({"genre.0":"action"}) -> Returns documents where "genre" field is an array and has "action" value at 0th position
+
+
+Cursors: find() method returns a cursor, to access documents you have to iterate the cursor. If we don't assign "find()" function to a cursor, then it automatically traversed 20 rows, i.e., iterates 20 times. MongoDB server returns query results in batches. Mostly first batch will return 101 results OR just enough documents to contain 1 MB, subsequent batches will be 4 MB.
+
+Getting a cursor -> var c = db.movies.find();
+Checking how many elemenst are left -> c.objsLeftInBatch();
+Checking if any elements are left -> c.hasNext() returns TRUE is any elements left, FALSE if no elements left
+Retrieving next element -> c.next() , see below to find out what happens if cursor has NO documents
+MongoDB Enterprise > c.next()
+2017-09-23T15:53:11.551-0700 E QUERY    [thread1] Error: error hasNext: false :
+
+Projection:- second argument to find() function
+syntax: fieldName:0 -> exclude it
+        fieldName:any non zero number -> enclude it (e.g., db.movies.find({},{title:27}), db.movies.find({},{title:-.3242}))
+
+Comparison operators:
+$gt, $gte, $lt, $lte, $ne, $in(array), $nin(array)
+
+Element Operators:
+$exists 
+$type: db.tollywood.find({genre:{$type: "string"}}) -> Returns documents where "genre" field is either a scalar field with string value OR an array of string values
+$type: db.tollywood.find({genre:{$type: "array"}})	-> Returns documents where "genre" field is a 2-D array
+$type: db.tollywood.find({genre:{$type: "object"}}) -> Returns documents where "genre" field's value is a documents
+
+Logical Operators:
+$or, $and, $not, $nor
+
+Array Operators:
+$and: db.tollywood.find({genre:{$all:["drama","action"]}}) -> Returns all documents where "genre" field is an array and has values containing "drama" and "action" 
+db.tollywood.find({genre:{$all:["drama","drama","drama"]}}) will return documents where "genre" filed has one "drama" or more "drama" elements, doesn't have to be 3 "drama" elements	
+
+db.tollywood.find({ratings:{$elemMatch:{IBN:2, Reviewer:"Masand"}}}) -> Returns all documents where "ratings" field is an array and has one element has {IBN:2, Reviewer:"Masand"}, this element can have more fields as well other than these two
+		
+		
+		
+UPDATE:-
+updateOne(): db.tollywood.updateOne({year:2012},{$set:{language:"Telugu"}}) ->Updates first record that matches filter criteria
+updateMany(): db.tollywood.updateMany({year:2012},{$set:{language:"Telugu"}}) ->Updates all records that matches filter criteria
+
+$unset(): db.tollywood.updateMany({year:2012},{$unset:{language:""}}) -> Removes the field from matching documents
+
+$addToSet : adds elements to the target field, which should be an aaray, since it is a set so duplicates will not be allowed
+db.tollywood.updateMany({title:"Yamudu"},{$addToSet:{genre:"action"}})
+$push: adds elements to the target field, which should be an aaray, here duplicates are allowed
+db.tollywood.updateMany({title:"Yamudu"},{$push:{genre:"action"}})
+
+$each - pushes the array as elements rather than inserting an array in a array field:
+db.tollywood.updateMany({title:"Yamudu"},{$push:{genre:{$each:["action","drama"]}}}) -> Adds elements "action" and "drama" in "genre" field
+
+$position: db.tollywood.updateMany({title:"Yamudu"},{$push:{genre:{$each:["biopic","patriotic"], $position:0}}}) -> Pushes "biopic" and "patriotic" elements at 0 and 1 position
+
+$slice: db.tollywood.updateMany({title:"Yamudu"},{$push:{genre:{$each:["travel"],$position:0,$slice:3}}}) -> Retain only 3 most recent(position 0,1 and 2) elements in array
+
+
+	
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+
+Nested searches and quotes - If you have document for a value of a key, use "key.subkey", quotes are mandatory, same goes for array positions, {"cast.0":"SRK"} inside find() and not {cast.0:"SRK"} 
+Searching a field which is an array - try both as shown in video and (try a single criteria for that field instead of an array)
+1.) For an element match or all elements match
+db.movies.find({"writers":["Jaby", "Achara"}) -> Show movies where "writers" field is an array and has only two values , "Jaby" followed by "Achara", here order of array element does matter
+db.movies.find({"writers":"Jaby") -> Show movies where one of the writers is "Jaby", if writers is array OR if writers is scalar field and value if "Jaby"
+db.movies.find({"writers":{$in:["Jaby"]}) -> Show movies where one of the writers is "Jaby", if writers is array OR if writers is scalar field and value if "Jaby"
+db.movies.find({"writers":["Jaby"]) -> Show movies where "writers" field is an array and has only one value , "Jaby" 
+2.) For a specific match
+db.movies.find({"genre.2":["action"]) -> Show movies where "genre" field is an array and has value , "action" as third elements 
+
+In Projection, use columnname:0, to exclude, otherwise exclude, you can't have both inclusion and exclusion, either include or exclude(except for _id field, this can be excluded, while others are being included)
+
+Comparison Operator:-
+db.movies.find({year:{$gte:1975}})   -> Inside "movies" collection, list documents with "year" property greater than 1975.
+db.movies.find({year:{$gte:1975}, title:{$gt:"Start Wars"}})   -> Inside "movies" collection, list documents with "year" property greater than 1975 and "title" > "Star Wars". e.g., "Star Waru", "ttar" etc..
+
+How to perform null check:-
+db.tollywood.find({genre:null}) - List documents where genre filed EITHER doesn't exists OR field exists and value is null 
+db.tollywood.find({genre:{$exists:false}}) - List documents where genre field doesn't exists
+db.tollywood.find({genre:{$type:10}}) - List documents where genre field field exists and value is null   ----10 is BSON type NULL ----
+
+$ne :- How does it work for db.movies.find({year:{$ne:1982, $ne:1987}}) - What does this mean , 
+
+$in: always needs an array ->db.movies.find({year:{$in:[1981]}}) , db.movies.find({year:{$in:[1981, 1987]}})
+
+$nin: returns exclusion list -> db.movies.find({year:{$in:[1981, 1987]}})
+
+element operators:- 
+ i.) $exists - db.tollywood.find({genre:{$exists:true}})
+ii.) $type -  db.tollywood.find({genre:{$type:"string"} , year:{$type:"number"}}) 
+
+logical operators:-
+ i.) $or - db.tollywood.find({$or:[{year:2012}, {title:"Panjaa"}]}) - {$or: a} here a must be an "array" of query documents
+ii.) $and - db.tollywood.find({$and:[{year:2012}, {title:"Panjaa"}]}) {$or: a} here a must be an "array" of query documents
+
+
+Array Operators:-
+  i.) $all - db.tollywood.find({genre:{$all:["drama", "action"]}})
+ ii.) $size - db.tollywood.find({genre:{$size:3}})
+iii.) $elematch - used in documents where array fields have documents seprated by commas instead of scalar values inside array -  
+ 
+---UPDATE--------
+update() -> same as updateOne - will only update one record
+db.movies.update({title:"mohra"}  ,  {year:1992, boxOffice:"hit"}) -> This will update the document and resulting document will have only two fields, "year" and "boxOffice"
+
+update({filter document} , {$set:{value document}})
+db.movies.update({title:"mohra"}  ,  {$set: {year:1992, boxOffice:"hit"}}) -> This will update the document and add two fields, "year" and "boxOffice"
+
+$inc -> uses both positive and negative values  
+
+$unset - db.movies.updateMany({genre:{exists:true}} , {$unset:{genre:""}}) -> Removes genre field from every document, wherei it exists
+
+
+
+Java Drivers:-
+
+Code for creating mongodb in Java---
+1.) MongoClient client = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
+2.) MongoClientOptions options =  MongoClientOptions.builder().connectionsPerHost(10).build();	  -- by default the numbe of connections per host is 100 --	
+	MongoClient client = new MongoClient(new ServerAddress("localhost", 27107), options);  
+3.) List all databases: client.getDatabaseNames().stream().forEach(System.out::println);
+4.) Get you collection - MongoCollection<Document> movies = db.getCollection("movies");
+
+
+
+Performance:-
+
+Storage Engine - the interface between mongo db server(mongod.exe) and actual persistant storage (disk). It can decide whether too put items in either memory or disk
+
+MMAPv1 (default storage engine)
+Automatically allocates power-of-two-sized documents when new documents are inserted (for 9 bytes, it will allocate 32 byte, for 5 it will allocate 8). This is handled by the storage engine.
+Offers in place updates, i.e., will be updated in the file where the document is kept, 
+Built on top of the mmap system call that maps files into memory. This is the basic idea behind why we call it MMAPv1.
+Offers collection-level locking, once collection is one file, multiple read single write lock on collections.
+CANNOT manage the memory used by each mapped file, deciding which parts to swap to disk. The operating system handles this.	
+
+
+
+Wired Tiger 3.0 (optional storage engine)
+Offers document level concurrency, NOT document level locking because storage engine assumes, that two writes will never occur on same document, and if they are, one will have to wait, but it will be invisible to the application
+Offers compression of both data and indexes
+CAN decide which file goes to memory and which one goes to disk, it keeps uncompressed files in memory and before sending to disk, it compresses them
+It is append only storage, so in place update, so old document is marked unused, and new space is allocated for udpated document. This allows for document level concurrency, but if we are dealing with large files, this could be bad, as we will have huge amount of space created for every update
+
+To use wired tiger,
+i.) "killall mongod" (kill existing mongod process)
+ii.) "mkdir WT" (create new directory for new process, otherwise default "/data/db" will be picked)
+iii.) "mongod -dbpath WT -storageEngine wiredTiger"
+If you do not give a new directory, and dafult directory "/data/db" has any single file or more, wiredTiger will not be able to read them because it can only read files created by wiredTiger engine, so if you have been using MMap,  then make sure, while switching to wiredTiger you create a new directory
+
+
+Get an explainable object and chain any CRUD operation you want to test
+i.) db.collection.explain().find({criteria query}) 
+Imp: only find() will work with explain, findOne() will nor work, check with other CRUD as well
+
+An index can be created on a non-existing field as well.
+Index CRUD operations:
+db.collection.createIndex({key1:1,key2:1}) --> :-1 for descending indexes
+db.collection.getIndexes()  -> Before Mongo 3.0, people used system.indexes collection to see what indexes exists, it doesn't work for WT, so use this new method instead
+db.collection.dropIndex({key1:-1})--> This should be exact same signature, unless you are using db.collection.dropIndexes() which will delete all indexes from the collection barring "_id" 
+
+While searching using index, for find() commands, performance is same whether index is ascending or descending, use a query with both $lt and $gt opeartors for same field
+
+
+Creating indexes on arrays field (MultiKey Index):-
+Only one of the keys can be an array, more than one array are not supported, error thrown, "can't index parallel arrays"
+a.) If index is already created, document violating above assumption will fail to be inserted
+b.) If documents exists such that two keys chosen for multikey index are arrays, then index will not be created
+
+Index are multikey from start(if document containing one of the keys is an array) or only becomes multikey, when first document gets created with one of the keys an array
+
+Indexes on document field- you can either create index on the field or can create on the subfield, with quotes, and these can be used in combination with scalar and array fields
+
+Unique Index- Forces that no two documents have same key in the inded field, db.collection.createIndex({key:1} , {unique:true}), if you create this index on a non-existing field, you will get duplicate key error, since more than one documents will have null values, if you have just one document or no document in the collection and you create an index on a non-existing field, then after index creation, no two documents ccan exist with that key not existing (both null) or with same values
+
+Sparse Index: - This is the index which tells that the documents which do not have this key will not be indexed
+
+Unique and Sparse ombined - Use this when want a field to be uuique but you know, that field will not appear in every document, db.collection.createIndex({key:1},{unique:true,sparse:true}) 
+
+Sparse index can't be used for sorting, plan will revert to collection scan instead of index scan
+
+Foreground index and Background Index:-
+Foreground Index - relatively fast, and blocks all writes and reads in the database, till the time index is being created
+Background Index - relatively slow, but doesn't block any read and writes  , db.collection.createIndex({key:1}, {background:true}), 
+Only one background index can be created at one time till mongo 2.2, but mongo 3 can create multiple indexes at one time in background
+what is the best approach
+
+If you have mongodb replica set, then take one of the servers out of the set, create index in thr foreground and take it back in the set  
+
+
+Explain() - It doesn't bring the data back to client- just tells you what would happen if query would have run
+Before mongo 3.0 
+You could get a cursor like, var cursor = db.collection.find() and call explain() on the cursor, you can't call explain on any obejct that is not a cursor, e.g., db.collection.count()
+
+db.collection.explain() returns an explainable object , it can be used with, find(), update(), remove(), count(), group() and aggregate() and help(), doesn't work with insert()
+
+
+Types of explain()
+i.) Query Planner mode - also the deafult mode - tell you the the winning anfd rejected plans, db.collection.explain()
+ii.) Execution Stats mode - along with query planner info, it also gives you the execution stats of winning plan, db.collection.explain("executionStats")
+iii.) All Plan Executions - along with query planner info, it also gives you the execution stats of all possible plans, db.collection.explain("allPlansExecution")
+
+Coverd Queries - Here only indexed will be examined, i.e., "totalDocsReturned" is "0", in order to do this, only project the keys that are covered in index and specifically excluse "_id"
+e.g., db.students.explain(true).find({class_id:{$gt:499}} , {class_id:1, _id:0}), assuming there is an index on "class_id" field
+However db.students.explain(true).find({class_id:{$gt:499}} , {_id:0}) will not work, as mongo will go and examine each document to see what keys are there and will exclude "_id" field, as it doesn't know, what fields are there in each document
+
+Text Search Index - 
+
+
+
+
+
