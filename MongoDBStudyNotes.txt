@@ -1,4 +1,4 @@
-Nexus Architecture:
+Nexus Architecture:-
 Expressive query language & secondary Indexes [Relational]
 Strong consistency [Relational]
 Enterprise Management and Integrations [Relational]
@@ -6,7 +6,7 @@ Flexible Data Model [NOSQL]
 Scalability and Performance [NOSQL]
 Always-On Global Deployments [NOSQL]
 
-Flexible Storage Architecture
+Flexible Storage Architecture:-
 MongoDB uniquely allows users to mix and match multiple storage engines within a single deployment
 WiredTiger (Default)
 Encrypted (Requires MongoDB Enterprise Advanced)
@@ -14,4 +14,35 @@ In-Memory (Requires MongoDB Enterprise Advanced)
 MMAPv1
 
 
-Unlike many NoSQL databases, users don’t need to give up JOINs entirely. For additional flexibility, MongoDB provides the ability to perform left-outer JOINs that combine data from multiple collections
+
+
+Benefits of MongoDB over other databases:-
+ i) Users don’t need to give up JOINs entirely. For additional flexibility, MongoDB provides the ability to perform left-outer JOINs that combine data from multiple collections
+ii.) provides document validation within the database. Users can enforce checks on document structure, data types, data ranges and the presence of mandatory fields. Other NOSQLs pass document validation to developers to handle in application code
+iii.) Unlike NoSQL databases, MongoDB is not limited to simple Key-Value operations.Developers can build rich applications using complex queries, aggregations and secondary indexes that unlock the value in structured, semi-structured and unstructured data.
+
+One fundamental difference with relational databases is that the MongoDB query model is implemented as methods or functions within the API of a specific programming language, as opposed to a completely separate language like SQL.
+
+MongoDB Compass is GUI client for MongoDB, included with both MongoDB Professional and MongoDB Enterprise Advanced. 
+
+
+Indexes are a crucial mechanism for optimizing system performance and scalability while providing flexible access to the data. While indexes will improve the performance of some operations by orders of magnitude, they incur associated overhead in write operations, disk usage, and memory consumption. By default, the WiredTiger storage engine compresses indexes in RAM, freeing up more of the working set for documents. MongoDB includes support for many types of secondary indexes that can be declared on any field in the document, including fields within arrays:
+Unique Indexes. By specifying an index as unique, MongoDB will reject inserts of new documents or the update of a document with an existing value for the field for which the unique index has been created. By default all indexes are not set as unique. If a compound index is specified as unique, the combination of values must be unique.
+Compound Indexes. It can be useful to create compound indexes for queries that specify multiple predicates. With a compound index on last name, first name, and city of residence, queries could efficiently locate people with all three of these values specified. An additional benefit of a compound index is that any leading field within the index can be used, so fewer indexes on single fields may be necessary: this compound index would also optimize queries looking for customers by last name.
+TTL Indexes. In some cases data should expire out of the system automatically. Time to Live (TTL) indexes allow the user to specify a period of time after which the data will automatically be deleted from the database.
+Geospatial Indexes. MongoDB provides geospatial indexes to optimize queries related to location within a two dimensional space, such as projection systems for the earth. 
+Partial Indexes. By specifying a filtering expression during index creation, a user can instruct MongoDB to include only documents that meet the desired conditions, for example by only indexing active customers. Partial indexes balance delivering low latency query performance while reducing system overhead.
+Sparse Indexes. If you mark a field as an Index, that has to be present in every document, since MongoDB schema is flexible, there could be documents that may have indexed field, sparse index help here, marking an Index sparse means, it doesn't have to present everywhere.
+Text Search Indexes. MongoDB provides a specialized index for text search that uses advanced, language-specific linguistic rules for stemming, tokenization, case sensitivity and stop words.
+
+
+
+Covered Queries
+Queries that return results containing only indexed fields are called covered queries. These results can be returned
+without reading from the source documents. Covered queries DO NOT read actual documents.
+
+
+Sharding vs Partitioning:-
+Partitioning are of two types , Vertical and Horizontal. vertical partitioning means create new schema , child table etc., i.e., cutting across schema, WHILE horizontal partitioning means break the data, if the data is large, create a paritioning table and put rest of the data there. Usually ORACLE has partitioning, but that partition stays in the same node or machine. MongoDB does partition and partitioned collection goes to a different node/machine. Thus Sharding can be thought of as horizontal partitioning across multiple nodes. One more difference is that unlike oracle RAC, there modes are bulit on "share nothing" architecture, while oracle nodes are almost "share everything", except for the udpates, that take time to replicate. Unlike relational databases, sharding is automatic and built into the database. Developers don't face the complexity of building sharding logic into their application code, which then needs to be updated as shards are migrated.
+
+
